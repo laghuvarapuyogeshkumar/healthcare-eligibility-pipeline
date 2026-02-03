@@ -1,0 +1,50 @@
+import pandas as pd
+from config import PARTNER_CONFIG
+from datetime import datetime
+
+def format_phone(phone):
+    digits = "".join(filter(str.isdigit, str(phone)))
+    if len(digits) == 10:
+        return f"{digits[:3]}-{digits[3:6]}-{digits[6:]}"
+    return None
+
+def parse_date(date_str):
+    for fmt in ("%m/%d/%Y", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(date_str, fmt).strftime("%Y-%m-%d")
+        except:
+            pass
+    return None
+
+def process_partner(partner_name, config):
+    df = pd.read_csv(config["file_path"], delimiter=config["delimiter"])
+    df = df.rename(columns=config["column_mapping"])
+
+    # Keep only standard columns
+    df = df[list(config["column_mapping"].values())]
+
+    # Transformations
+    df["first_name"] = df["first_name"].str.title()
+    df["last_name"] = df["last_name"].str.title()
+    df["email"] = df["email"].str.lower()
+    df["dob"] = df["dob"].apply(parse_date)
+    df["phone"] = df["phone"].apply(format_phone)
+    df["partner_code"] = config["partner_code"]
+
+    # Validation (bonus)
+    df = df[df["external_id"].notna()]
+
+    return df
+
+def main():
+    final_df = pd.DataFrame()
+
+    for partner, config in PARTNER_CONFIG.items():
+        partner_df = process_partner(partner, config)
+        final_df = pd.concat([final_df, partner_df], ignore_index=True)
+
+    final_df.to_csv("output.csv", index=False)
+    print("Pipeline completed. Output saved to output.csv")
+
+if __name__ == "__main__":
+    main()
