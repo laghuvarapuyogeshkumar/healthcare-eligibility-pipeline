@@ -1,6 +1,3 @@
-# healthcare-eligibility-pipeline
-
-
 # Healthcare Eligibility Pipeline
 
 ## Overview
